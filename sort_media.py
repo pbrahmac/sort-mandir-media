@@ -1,4 +1,4 @@
-from pyexiv2 import Image
+from exiv2 import ImageFactory
 
 import os
 import shutil
@@ -64,8 +64,9 @@ def getMediaDate(filepath: str) -> str:
   # reads EXIF data from image and returns the date created
   if isPhoto(filepath):
     try:
-      img = Image(filepath)
-      data = img.read_exif()
+      img = ImageFactory.open(filepath)
+      img.readMetadata()
+      data = img.exifData()
       img_datetime = data.get("Exif.Image.DateTime")
       img.close()
       return img_datetime
@@ -90,27 +91,31 @@ def getMediaDate(filepath: str) -> str:
 
 ### file processing functions
 def generateSortSummary(root_dir: str):
-  for root, dirs, files in os.walk(root_dir):
-    # path = root.split(os.sep)
-    for file in files:
-        # skip DS_Store files
-        if file == ".DS_Store":
-          continue
-        
-        # get full filepath
-        full_filepath = os.path.join(os.path.abspath(root), file)
-        
-        # sort file into year / photo-video dictionary
-        media_datetime = getMediaDate(full_filepath)
-        media_year = media_datetime[:4]
-        if isPhoto(full_filepath):
-          yearDict[media_year]["Photos"].append(full_filepath)
-        elif isVideo(full_filepath):
-          yearDict[media_year]["Videos"].append(full_filepath)
-        else:
-          invalid_files.append((full_filepath, "Not a photo or video."))
+  try:
+    for root, dirs, files in os.walk(root_dir):
+      # path = root.split(os.sep)
+      for file in files:
+          # skip DS_Store files
+          if file == ".DS_Store":
+            continue
+          
+          # get full filepath
+          full_filepath = os.path.join(os.path.abspath(root), file)
+          
+          # sort file into year / photo-video dictionary
+          media_datetime = getMediaDate(full_filepath)
+          media_year = media_datetime[:4]
+          if isPhoto(full_filepath):
+            yearDict[media_year]["Photos"].append(full_filepath)
+          elif isVideo(full_filepath):
+            yearDict[media_year]["Videos"].append(full_filepath)
+          else:
+            invalid_files.append((full_filepath, "Not a photo or video."))
+  except Exception as e:
+    print("An error occurred: ", e)
+    return ("Not able to generate a sorted folder structure. Something went wrong.", 1)
   
-  return yearDictSummary()
+  return (yearDictSummary(), 0)
 
 def sortFiles(root_dir):
   for year, types in yearDict.items():
@@ -154,7 +159,16 @@ def main():
     dpg.set_value("directory_text", f"Selected Directory: {selected_directory}")
 
     # Run preprocessing
-    dpg.set_value("summary_text", "Sorted Folder Structure:\n\n" + generateSortSummary(selected_directory) + "\n\n")
+    summary, exit_code = generateSortSummary(selected_directory)
+    if exit_code != 0:
+      dpg.set_value("summary_text", "Sorted Folder Structure:\n\n" + summary + "\n\n")
+      dpg.configure_item("summary_text", show=True)
+      dpg.configure_item("confirm", show=False)
+      dpg.configure_item("close", show=False)
+      dpg.set_value("directory_text", "")
+      return
+    
+    dpg.set_value("summary_text", "Sorted Folder Structure:\n\n" + summary + "\n\n")
     dpg.configure_item("summary_text", show=True)
 
     # Show confirmation button

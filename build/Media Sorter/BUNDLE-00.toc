@@ -1,0 +1,4 @@
+([('Media Sorter',
+   '/Users/pbrahmarchari/Documents/personal-projects/sort-mandir-media/dist/Media '
+   'Sorter',
+   'EXECUTABLE')],)
