@@ -205,7 +205,5 @@ def main():
   dpg.start_dearpygui()
   dpg.destroy_context()
 
-
-
 if __name__ == "__main__":
   main()
