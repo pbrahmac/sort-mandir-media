@@ -67,10 +67,11 @@ def getMediaDate(filepath: str) -> str:
       img = ImageFactory.open(filepath)
       img.readMetadata()
       data = img.exifData()
-      img_datetime = data.get("Exif.Image.DateTime")
-      img.close()
+      img_datetime = data["Exif.Image.DateTime"].print()
       return img_datetime
-    except Exception:
+    except Exception as e:
+      print(filepath)
+      print(e)
       return "Error getting media date."
   # reads the file properties of video file and returns the date created
   elif isVideo(filepath):
